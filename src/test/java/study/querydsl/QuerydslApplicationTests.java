@@ -1,5 +1,6 @@
 package study.querydsl;
 
+import com.querydsl.core.QueryResults;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -188,6 +189,67 @@ class QuerydslApplicationTests {
 						, member.age.eq(10)
 				)
 				.fetch(); assertThat(result1.size()).isEqualTo(1);
+	}
+
+
+	@Test
+	void fetchTest() {
+		//List : 리스트 조회, 데이터 없으면 빈 리스트 반환
+		List<Member> fetch = queryFactory
+				.selectFrom(member)
+				.fetch();
+
+		//단 건
+		//결과가 없으면 : null
+		//결과가 둘 이상이면 : com.querydsl.core.NonUniqueResultException
+		/*Member findMember1 = queryFactory
+				.selectFrom(member)
+				.fetchOne();*/
+
+		//처음 한 건 조회
+		/*Member findMember2 = queryFactory
+				.selectFrom(member)
+				.fetchFirst();*/
+
+		//페이징에서 사용
+		//페이징 정보 포함, total count 쿼리 추가 실행
+		QueryResults<Member> results = queryFactory
+				.selectFrom(member)
+				.fetchResults();
+
+		//count 쿼리로 변경
+		/*long count = queryFactory
+				.selectFrom(member)
+				.fetchCount();*/
+
+
+	}
+	/**
+	 *회원 정렬 순서
+	 * 1. 회원 나이 내림차순(desc)
+	 * 2. 회원 이름 올림차순(asc)
+	 * 단 2에서 회원 이름이 없으면 마지막에 출력(nulls last) */
+	@Test
+	public void sort() {
+		em.persist(new Member(null, 100));
+		em.persist(new Member("member5", 100));
+		em.persist(new Member("member6", 100));
+
+		List<Member> result = queryFactory
+				.selectFrom(member)
+				.where(member.age.eq(100))
+				.orderBy(
+						member.age.desc()
+						, member.username.asc().nullsLast()
+				) .fetch();
+
+		Member member5 = result.get(0);
+		Member member6 = result.get(1);
+		Member memberNull = result.get(2);
+
+		assertThat(member5.getUsername()).isEqualTo("member5");
+		assertThat(member6.getUsername()).isEqualTo("member6");
+		assertThat(memberNull.getUsername()).isNull();
 	}
 
 }
