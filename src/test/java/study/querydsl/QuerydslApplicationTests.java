@@ -2,6 +2,8 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
@@ -12,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+import study.querydsl.dto.MemberDto;
+import study.querydsl.dto.UserDto;
 import study.querydsl.entity.*;
 
 import javax.persistence.EntityManager;
@@ -631,5 +635,113 @@ class QuerydslApplicationTests {
 
 		System.out.println("result ::::: " + result);
 	}
+
+	@Test
+	public void projection() {
+
+		List<String> result =
+				queryFactory
+						.select(member.username)
+						.from(member)
+						.fetch();
+
+		for (String rs: result) {
+			System.out.println("result ::: " + rs);
+		}
+
+	}
+
+	@Test
+	public void projectionTuple() {
+		List<Tuple> result =
+				queryFactory
+					.select(member.username, member.age)
+						.from(member)
+						.fetch();
+
+		for (Tuple rs: result) {
+			System.out.println("result ::: " + rs.get(member.username));
+			System.out.println("result ::: " + rs.get(member.age));
+		}
+	}
+
+
+	/*
+	* JPA방식
+	* new 명령어를 사용해야함
+	* DTO의 package이름을 다 적어줘야g함
+	* 생성자 방식만 지원함
+	* */
+	@Test
+	public void selectJPAProjectionDTO() {
+		List<MemberDto> result =
+				em.createQuery(
+						"select new study.querydsl.dto.MemberDto(m.username, m.age) " + "from Member m"
+								, MemberDto.class)
+				.getResultList();
+
+	}
+
+	/*Setter 접근*/
+	@Test
+	public void queryDslProjectionsBean() {
+
+		List<MemberDto> result =
+						queryFactory.select(
+								Projections.bean(MemberDto.class,
+								member.username,
+								member.age))
+							.from(member)
+							.fetch();
+
+	}
+
+	/*필드 접근*/
+	@Test
+	public void queryDslProjectionsFields() {
+
+		List<MemberDto> result =
+						queryFactory.select(
+								Projections.fields(MemberDto.class,
+								member.username,
+								member.age))
+						.from(member)
+						.fetch();
+
+	}
+
+	/*생성자 접근*/
+	@Test
+	public void queryDslProjectionsConstructor() {
+
+		List<MemberDto> result =
+				queryFactory.select(
+								Projections.constructor(MemberDto.class,
+										member.username,
+										member.age))
+						.from(member)
+						.fetch();
+
+	}
+
+	@Test
+	public void projectionsDiffDTO() {
+
+		QMember memberSub = new QMember("memberSub");
+
+		List<UserDto> fetch =
+				queryFactory
+						.select(Projections.fields(UserDto.class,
+								member.username.as("name")//별칭
+								, ExpressionUtils.as(//필드나 서브쿼에 별칭 사용
+										JPAExpressions
+										.select(memberSub.age.max())
+										.from(memberSub), "age")
+						))
+						.from(member)
+						.fetch();
+
+	}
+
 
 }
