@@ -10,6 +10,7 @@ import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -819,6 +820,64 @@ class QuerydslApplicationTests {
 	private BooleanExpression allEq(String usernameCond, Integer ageCond) {
 		return usernameEq(usernameCond).and(ageEq(ageCond));
 	}
+
+	@Test
+	public void 벌크_업데이트(){
+
+		queryFactory
+				.update(member)
+				.set(member.username, "비회원")
+				.where(member.age.lt(28))
+				.execute()
+				;
+
+		//바로 DB UPDATE하므로 바로 select 하게 되면 기존 영속성 컨텍스트 캐싱되어있는 값을 가져옴
+		//때문에 클리어 필요.
+		em.flush(); em.clear();
+
+		List<Member> members = queryFactory.selectFrom(member).fetch();
+
+		for (Member m:
+			 members) {
+			System.out.println(m.getUsername());
+
+		}
+
+	}
+
+	@Test
+	public void update_add(){
+
+		queryFactory
+				.update(member)
+				.set(member.age, member.age.add(1))
+				.execute();
+
+	}
+
+
+	//multiply : 곱하기
+
+
+
+	/*대량으로 데이터 삭제
+	* 마찬가지로 영속성컨텍스트 관리(초기화) 필요
+	* */
+	@Test
+	public void 벌크_삭제(){
+
+		long count = queryFactory
+				.delete(member)
+				.where(member.age.gt(18))
+				.execute();
+
+	}
+
+
+
+
+
+
 
 
 
