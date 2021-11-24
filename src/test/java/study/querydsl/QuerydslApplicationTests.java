@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberDto;
+import study.querydsl.dto.QMemberDto;
 import study.querydsl.dto.UserDto;
 import study.querydsl.entity.*;
 
@@ -740,6 +741,23 @@ class QuerydslApplicationTests {
 						))
 						.from(member)
 						.fetch();
+
+	}
+
+
+	@Test
+	public void queryProjectionDTO(){
+
+		List<MemberDto> result = queryFactory
+				.select(new QMemberDto(member.username, member.age))
+				.from(member)
+				.fetch();
+
+		List<String> distinctResult = queryFactory
+				.select(member.username)
+				.distinct()//
+				.from(member)
+				.fetch();
 
 	}
 
